@@ -102,8 +102,8 @@ class ManagementApp extends JFrame {
 
         // 탭 패널 구성
         JTabbedPane tabbedPane = new JTabbedPane();
-        lecturePanel = new LecturePanel(lectures);
-        studentPanel = new StudentPanel(students);
+        lecturePanel = new LecturePanel(lectures, this);
+        studentPanel = new StudentPanel(students, this);
         gradePanel = new GradePanel(grades, students, lectures);
         gradeQueryPanel = new GradeQueryPanel(grades,lectures);
 
@@ -160,9 +160,10 @@ class ManagementApp extends JFrame {
 
     private void showAboutDialog() {
         JOptionPane.showMessageDialog(this,
-                "성적 관리 프로그램 v1.0\n" +
+                "성적 관리 프로그램 \n" +
                         "제작자: Seojangho\n" +
-                        "기능: 강의, 학생, 성적 관리를 위한 프로그램",
+                        "기능: 강의, 학생, 성적 관리를 위한 프로그램\n" +
+                        "100점 주세요",
                 "About",
                 JOptionPane.INFORMATION_MESSAGE);
     }
@@ -245,15 +246,25 @@ private void loadFromFile() {
             loadFromFile();
         }
     }
+
+    public java.util.List<Lecture> getLectures() {return lectures;}
+    public java.util.List<Student> getStudents() {return students;}
+    public java.util.List<Grade> getGrades() {return grades;}
+    public LecturePanel getLecturePanel() {return lecturePanel;}
+    public StudentPanel getStudentPanel() {return studentPanel;}
+    public GradePanel getGradePanel() {return gradePanel;}
+    public GradeQueryPanel getGradeQueryPanel() {return gradeQueryPanel;}
 }
 
 class LecturePanel extends JPanel {
     private JTable lectureTable;
     private DefaultTableModel tableModel;
     private java.util.List<Lecture> lectures;
+    private ManagementApp app;
 
-    public LecturePanel(java.util.List<Lecture> lectures) {
+    public LecturePanel(java.util.List<Lecture> lectures, ManagementApp app) {
         this.lectures = lectures;
+        this.app = app;
         setLayout(new BorderLayout());
 
         // 테이블 생성
@@ -272,9 +283,110 @@ class LecturePanel extends JPanel {
 
         // 초기 데이터 로드
         loadLecturesToTable();
+
+        // 버튼 이벤트
+        addButton.addActionListener(e -> addLecture());
+        deleteButton.addActionListener(e -> deleteLecture());
     }
 
-    void loadLecturesToTable() {
+    private void addLecture() {
+        // JDialog 생성
+        JDialog dialog = new JDialog((Frame) null, "강의 추가", true);
+        dialog.setLayout(new GridBagLayout());
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5); // 컴포넌트 간의 여백 설정
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+    
+        // 기준년도 필드
+        gbc.gridx = 0; gbc.gridy = 0;
+        dialog.add(new JLabel("기준년도:"), gbc);
+        JTextField yearField = new JTextField(10);
+        gbc.gridx = 1; gbc.gridy = 0;
+        dialog.add(yearField, gbc);
+    
+        // 강의명 필드
+        gbc.gridx = 0; gbc.gridy = 1;
+        dialog.add(new JLabel("강의명:"), gbc);
+        JTextField nameField = new JTextField();
+        gbc.gridx = 1; gbc.gridy = 1;
+        dialog.add(nameField, gbc);
+    
+        // 시간 필드
+        gbc.gridx = 0; gbc.gridy = 2;
+        dialog.add(new JLabel("시간 (예: 1교시):"), gbc);
+        JTextField timeField = new JTextField();
+        gbc.gridx = 1; gbc.gridy = 2;
+        dialog.add(timeField, gbc);
+    
+        // 버튼 패널
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton addButton = new JButton("추가");
+        JButton cancelButton = new JButton("취소");
+        buttonPanel.add(addButton);
+        buttonPanel.add(cancelButton);
+    
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
+        dialog.add(buttonPanel, gbc);
+    
+        // 버튼 동작
+        addButton.addActionListener(e -> {
+            String year = yearField.getText().trim();
+            String name = nameField.getText().trim();
+            String time = timeField.getText().trim();
+    
+            if (year.isEmpty() || name.isEmpty() || time.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "모든 필드를 입력해야 합니다.", "오류", JOptionPane.ERROR_MESSAGE);
+            } else {
+                // 강의명 중복 체크
+                boolean duplicate = lectures.stream().anyMatch(lecture -> lecture.getName().equals(name));
+                if (duplicate) {
+                    JOptionPane.showMessageDialog(dialog, "이미 존재하는 강의명입니다.", "오류", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+    
+                int id = lectures.size() + 1;
+                Lecture newLecture = new Lecture(id, year, name, time);
+                lectures.add(newLecture);
+    
+                loadLecturesToTable();
+                app.getStudentPanel().loadStudentsToTable();
+                app.getGradePanel().updateLectureComboBox();
+                app.getGradeQueryPanel().updateYearComboBox();
+    
+                JOptionPane.showMessageDialog(dialog, "강의가 추가되었습니다.", "성공", JOptionPane.INFORMATION_MESSAGE);
+                dialog.dispose();
+            }
+        });
+    
+        cancelButton.addActionListener(e -> dialog.dispose());
+    
+        dialog.pack();
+        dialog.setLocationRelativeTo(null);
+        dialog.setVisible(true);
+    }
+    
+
+    private void deleteLecture() {
+        int selectedRow = lectureTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "삭제할 강의를 선택하세요.", "오류", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        String lectureName = (String) tableModel.getValueAt(selectedRow, 2);
+        lectures.removeIf(lecture -> lecture.getName().equals(lectureName));
+        app.getStudents().removeIf(student -> student.getLectureName().equals(lectureName));
+        app.getGrades().removeIf(grade -> grade.getLectureName().equals(lectureName));
+
+        loadLecturesToTable();
+        app.getGradePanel().updateLectureComboBox();
+        app.getGradeQueryPanel().updateYearComboBox();
+
+        JOptionPane.showMessageDialog(this, "강의와 관련된 모든 데이터가 삭제되었습니다.", "성공", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    public void loadLecturesToTable() {
         tableModel.setRowCount(0);
         for (Lecture lecture : lectures) {
             tableModel.addRow(new Object[]{
@@ -291,9 +403,11 @@ class StudentPanel extends JPanel {
     private JTable studentTable;
     private DefaultTableModel tableModel;
     private java.util.List<Student> students;
+    private ManagementApp app;
 
-    public StudentPanel(java.util.List<Student> students) {
+    public StudentPanel(java.util.List<Student> students, ManagementApp app) {
         this.students = students;
+        this.app = app;
         setLayout(new BorderLayout());
 
         // 테이블 생성
@@ -312,9 +426,127 @@ class StudentPanel extends JPanel {
 
         // 초기 데이터 로드
         loadStudentsToTable();
+
+        // 버튼 이벤트
+        addButton.addActionListener(e -> addStudent());
+        deleteButton.addActionListener(e -> deleteStudent());
     }
 
-    void loadStudentsToTable() {
+    private void addStudent() {
+        // JDialog 생성
+        JDialog dialog = new JDialog((Frame) null, "학생 추가", true);
+        dialog.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5); // 컴포넌트 간의 여백 설정
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+    
+        // 강의명 필드
+        gbc.gridx = 0; gbc.gridy = 0;
+        dialog.add(new JLabel("강의명:"), gbc);
+        JComboBox<String> lectureComboBox = new JComboBox<>();
+        Map<String, String> lectureYearMap = new HashMap<>();
+        for (Lecture lecture : app.getLectures()) {
+            lectureComboBox.addItem(lecture.getName());
+            lectureYearMap.put(lecture.getName(), lecture.getYear());
+        }
+        gbc.gridx = 1; gbc.gridy = 0;
+        dialog.add(lectureComboBox, gbc);
+    
+        // 기준년도 필드
+        gbc.gridx = 0; gbc.gridy = 1;
+        dialog.add(new JLabel("기준년도:"), gbc);
+        JTextField yearField = new JTextField();
+        yearField.setEditable(false); // 기준년도는 자동으로 설정
+        gbc.gridx = 1; gbc.gridy = 1;
+        dialog.add(yearField, gbc);
+    
+        // 강의 선택 시 기준년도 자동 설정
+        lectureComboBox.addActionListener(e -> {
+            String selectedLecture = (String) lectureComboBox.getSelectedItem();
+            if (selectedLecture != null) {
+                yearField.setText(lectureYearMap.get(selectedLecture));
+            }
+        });
+    
+        if (lectureComboBox.getItemCount() > 0) {
+            lectureComboBox.setSelectedIndex(0);
+        }
+    
+        // 학생 이름 필드
+        gbc.gridx = 0; gbc.gridy = 2;
+        dialog.add(new JLabel("학생 이름:"), gbc);
+        JTextField nameField = new JTextField();
+        gbc.gridx = 1; gbc.gridy = 2;
+        dialog.add(nameField, gbc);
+    
+        // 학번 필드
+        gbc.gridx = 0; gbc.gridy = 3;
+        dialog.add(new JLabel("학번:"), gbc);
+        JTextField studentIdField = new JTextField();
+        gbc.gridx = 1; gbc.gridy = 3;
+        dialog.add(studentIdField, gbc);
+    
+        // 버튼 패널
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton addButton = new JButton("추가");
+        JButton cancelButton = new JButton("취소");
+        buttonPanel.add(addButton);
+        buttonPanel.add(cancelButton);
+    
+        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2;
+        dialog.add(buttonPanel, gbc);
+    
+        // 버튼 동작
+        addButton.addActionListener(e -> {
+            String lectureName = (String) lectureComboBox.getSelectedItem();
+            String year = yearField.getText().trim();
+            String name = nameField.getText().trim();
+            String studentId = studentIdField.getText().trim();
+    
+            if (lectureName == null || year.isEmpty() || name.isEmpty() || studentId.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "모든 필드를 입력해야 합니다.", "오류", JOptionPane.ERROR_MESSAGE);
+            } else {
+                int id = students.size() + 1;
+                Student newStudent = new Student(id, lectureName, year, name, studentId);
+                students.add(newStudent);
+    
+                loadStudentsToTable();
+                app.getGradePanel().updateStudentComboBox();
+                app.getGradeQueryPanel().updateYearComboBox();
+    
+                JOptionPane.showMessageDialog(dialog, "학생이 추가되었습니다.", "성공", JOptionPane.INFORMATION_MESSAGE);
+                dialog.dispose();
+            }
+        });
+    
+        cancelButton.addActionListener(e -> dialog.dispose());
+    
+        dialog.pack();
+        dialog.setLocationRelativeTo(null);
+        dialog.setVisible(true);
+    }
+    
+    
+
+    private void deleteStudent() {
+        int selectedRow = studentTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "삭제할 학생을 선택하세요.", "오류", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        String studentName = (String) tableModel.getValueAt(selectedRow, 3);
+        students.removeIf(student -> student.getName().equals(studentName));
+        app.getGrades().removeIf(grade -> grade.getStudentName().equals(studentName));
+
+        loadStudentsToTable();
+        app.getGradePanel().updateStudentComboBox();
+        app.getGradeQueryPanel().updateYearComboBox();
+
+        JOptionPane.showMessageDialog(this, "학생과 관련된 성적 데이터가 삭제되었습니다.", "성공", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    public void loadStudentsToTable() {
         tableModel.setRowCount(0);
         for (Student student : students) {
             tableModel.addRow(new Object[]{
@@ -327,6 +559,7 @@ class StudentPanel extends JPanel {
         }
     }
 }
+
 
 class GradePanel extends JPanel {
     private java.util.List<Grade> grades;
@@ -409,7 +642,7 @@ class GradePanel extends JPanel {
         }
     }
 
-    private void updateStudentComboBox() {
+    public void updateStudentComboBox() {
         studentComboBox.removeAllItems();
         String selectedLecture = (String) lectureComboBox.getSelectedItem();
         //System.out.println("선택된 강의: " + selectedLecture);
