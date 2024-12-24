@@ -35,13 +35,58 @@ public class ManagementApp extends JFrame {
         setVisible(true);
     }
 
-    private void saveData() throws IOException{
+    private void saveData() throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME))) {
+            writer.write("#LECTURES\n");
+            for (Lecture lecture : lectures) {
+                writer.write(lecture.getId() + "|" + lecture.getYear() + "|" + lecture.getName() + "|" + lecture.getTime() + "\n");
+            }
 
+            writer.write("#STUDENTS\n");
+            for (Student student : students) {
+                writer.write(student.getId() + "|" + student.getLectureName() + "|" + student.getYear() + "|" + student.getName() + "|" + student.getStudentId() + "\n");
+            }
+
+            writer.write("#GRADES\n");
+            for (Grade grade : grades) {
+                writer.write(grade.getId() + "|" + grade.getLectureName() + "|" + grade.getYear() + "|" + grade.getStudentName() +
+                        "|" + grade.getMidterm() + "|" + grade.getFinalExam() + "|" + grade.getAssignment() +
+                        "|" + grade.getTotal() + "|" + grade.getAverage() + "\n");
+            }
+        }
     }
 
-    private void loadData() throws IOException{
+    private void loadData() throws IOException {
+        File file = new File(FILE_NAME);
+        if (!file.exists()) return;
 
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            String section = "";
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("#")) {
+                    section = line;
+                } else {
+                    String[] parts = line.split("\\|");
+                    switch (section) {
+                        case "#LECTURES":
+                            lectures.add(new Lecture(Integer.parseInt(parts[0]), parts[1], parts[2], parts[3]));
+                            break;
+                        case "#STUDENTS":
+                            students.add(new Student(Integer.parseInt(parts[0]), parts[1], parts[2], parts[3], parts[4]));
+                            break;
+                        case "#GRADES":
+                            grades.add(new Grade(Integer.parseInt(parts[0]), parts[1], parts[2], parts[3],
+                                    Integer.parseInt(parts[4]), Integer.parseInt(parts[5]),
+                                    Integer.parseInt(parts[6]), Integer.parseInt(parts[7]),
+                                    Double.parseDouble(parts[8])));
+                            break;
+                    }
+                }
+            }
+        }
     }
+
 
     class LecturePanel extends JPanel{
 
