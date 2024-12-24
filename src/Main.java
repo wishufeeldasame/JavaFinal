@@ -105,7 +105,7 @@ class ManagementApp extends JFrame {
         lecturePanel = new LecturePanel(lectures);
         studentPanel = new StudentPanel(students);
         gradePanel = new GradePanel(grades, students, lectures);
-        gradeQueryPanel = new GradeQueryPanel();
+        gradeQueryPanel = new GradeQueryPanel(grades,lectures);
 
         tabbedPane.addTab("강의 관리", lecturePanel);
         tabbedPane.addTab("학생 관리", studentPanel);
@@ -118,6 +118,7 @@ class ManagementApp extends JFrame {
         try {
             loadData();
             gradePanel.updateLectureComboBox();
+            gradeQueryPanel.updateYearComboBox();
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "파일 로드 중 오류 발생: " + e.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
         }
@@ -450,23 +451,30 @@ class GradePanel extends JPanel {
         String finalExamText = finalExamField.getText().trim();
         String assignmentText = assignmentField.getText().trim();
     
-        if (selectedLecture == null || selectedStudent == null || midtermText.isEmpty() || finalExamText.isEmpty() || assignmentText.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "모든 입력 값을 채워야 합니다.", "오류", JOptionPane.ERROR_MESSAGE);
+        if (selectedLecture == null || selectedStudent == null) {
+            JOptionPane.showMessageDialog(this, "강의와 학생을 선택해야 합니다.", "오류", JOptionPane.ERROR_MESSAGE);
             return;
         }
+        
+        if (midtermText.isEmpty() && finalExamText.isEmpty() && assignmentText.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "최소 하나의 성적을 입력해야 합니다.", "오류", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
     
         try {
-            int midterm = Integer.parseInt(midtermText);
-            int finalExam = Integer.parseInt(finalExamText);
-            int assignment = Integer.parseInt(assignmentText);
-    
+            // 입력값 처리 (빈 입력란은 0으로 처리)
+            int midterm = midtermText.isEmpty() ? 0 : Integer.parseInt(midtermText);
+            int finalExam = finalExamText.isEmpty() ? 0 : Integer.parseInt(finalExamText);
+            int assignment = assignmentText.isEmpty() ? 0 : Integer.parseInt(assignmentText);
+        
             // 기존 성적 검색
             Grade existingGrade = grades.stream()
                     .filter(grade -> grade.getLectureName().equals(selectedLecture)
                             && grade.getStudentName().equals(selectedStudent))
                     .findFirst()
                     .orElse(null);
-    
+        
             if (existingGrade != null) {
                 // 기존 성적 수정
                 existingGrade.setMidterm(midterm);
@@ -474,7 +482,7 @@ class GradePanel extends JPanel {
                 existingGrade.setAssignment(assignment);
                 existingGrade.setTotal(midterm + finalExam + assignment);
                 existingGrade.setAverage(Math.round((existingGrade.getTotal() / 3.0) * 100) / 100.0);
-    
+        
                 JOptionPane.showMessageDialog(this, "기존 성적이 수정되었습니다.", "성공", JOptionPane.INFORMATION_MESSAGE);
             } else {
                 // 새로운 성적 추가
@@ -482,29 +490,31 @@ class GradePanel extends JPanel {
                         .filter(student -> student.getName().equals(selectedStudent) && student.getLectureName().equals(selectedLecture))
                         .findFirst()
                         .orElse(null);
-    
+        
                 if (matchedStudent == null) {
                     JOptionPane.showMessageDialog(this, "학생 데이터를 찾을 수 없습니다.", "오류", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
-    
+        
                 int id = grades.size() + 1;
                 Grade newGrade = new Grade(id, selectedLecture, matchedStudent.getYear(), selectedStudent, midterm, finalExam, assignment);
                 grades.add(newGrade);
-    
+        
                 JOptionPane.showMessageDialog(this, "성적이 추가되었습니다.", "성공", JOptionPane.INFORMATION_MESSAGE);
             }
-    
+        
             // 테이블 갱신
             loadGradesToTable();
-    
+        
             // 입력 필드 초기화
             midtermField.setText("");
             finalExamField.setText("");
             assignmentField.setText("");
+        
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "성적 입력란에 숫자를 입력해야 합니다.", "오류", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "성적 입력란에 올바른 숫자를 입력해야 합니다.", "오류", JOptionPane.ERROR_MESSAGE);
         }
+        
     }
     
 }
@@ -513,12 +523,151 @@ class GradePanel extends JPanel {
 
 
 
-
 class GradeQueryPanel extends JPanel {
-    private java.util.List<Grade> grades;
+    private java.util.List<Grade> grades; // 성적 리스트
+    private java.util.List<Lecture> lectures; // 강의 리스트
+    private JTable gradeTable;
+    private DefaultTableModel tableModel;
+
+    private JComboBox<String> yearComboBox; // 기준년도 필터
+    private JComboBox<String> lectureComboBox; // 강의명 필터
+
+    public GradeQueryPanel(java.util.List<Grade> grades, java.util.List<Lecture> lectures) {
+        this.grades = grades;
+        this.lectures = lectures;
+        setLayout(new BorderLayout());
+
+        // 상단 필터 패널 생성
+        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+
+        // 기준년도 콤보박스 생성
+        filterPanel.add(new JLabel("기준년도:"));
+        yearComboBox = new JComboBox<>();
+        yearComboBox.addItem("전체"); // 기본값
+        yearComboBox.addActionListener(e -> updateLectureComboBox());
+        filterPanel.add(yearComboBox);
+
+        // 강의명 콤보박스 생성
+        filterPanel.add(new JLabel("강의명:"));
+        lectureComboBox = new JComboBox<>();
+        lectureComboBox.addItem("전체"); // 기본값
+        lectureComboBox.addActionListener(e -> filterGrades());
+        filterPanel.add(lectureComboBox);
+
+        add(filterPanel, BorderLayout.NORTH);
+
+        // 테이블 생성
+        String[] columns = {"ID", "강의명", "기준년도", "학생명", "중간고사", "기말고사", "과제", "총점", "평균"};
+        tableModel = new DefaultTableModel(columns, 0);
+        gradeTable = new JTable(tableModel);
+        add(new JScrollPane(gradeTable), BorderLayout.CENTER);
+
+        // 초기 데이터 로드
+        updateYearComboBox();
+    }
+
+    // 기준년도 필터 업데이트
+    void updateYearComboBox() {
+        yearComboBox.removeAllItems();
+        yearComboBox.addItem("전체"); // 기본값
+
+        for (Lecture lecture : lectures) {
+            if (!yearComboBoxContains(lecture.getYear())) {
+                yearComboBox.addItem(lecture.getYear());
+            }
+        }
+
+        if (yearComboBox.getItemCount() > 1) {
+            yearComboBox.setSelectedIndex(0); // 기본값 선택
+        }
+    }
+
+    // yearComboBoxContains 메서드 구현
+    private boolean yearComboBoxContains(String year) {
+        for (int i = 0; i < yearComboBox.getItemCount(); i++) {
+            if (yearComboBox.getItemAt(i).equals(year)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
 
+    // 강의명 필터 업데이트
+    void updateLectureComboBox() {
+        lectureComboBox.removeAllItems();
+        lectureComboBox.addItem("전체"); // 기본값 추가
+
+        String selectedYear = (String) yearComboBox.getSelectedItem();
+        if (selectedYear == null) {
+            return; // 기준년도가 선택되지 않은 경우 필터링하지 않음
+        }
+
+        for (Lecture lecture : lectures) {
+            if (selectedYear.equals("전체") || lecture.getYear().equals(selectedYear)) {
+                lectureComboBox.addItem(lecture.getName());
+            }
+        }
+
+    // 기본값 선택
+    if (lectureComboBox.getItemCount() > 0) {
+        lectureComboBox.setSelectedIndex(0); // "전체"를 선택
+    }
+
+    filterGrades(); // 강의 필터 업데이트 후 성적 필터링 실행
 }
+
+    // 성적 데이터 필터링
+    private void filterGrades() {
+        String selectedYear = (String) yearComboBox.getSelectedItem();
+        String selectedLecture = (String) lectureComboBox.getSelectedItem();
+    
+        // selectedLecture에 대한 null 체크 추가
+        if (selectedLecture == null || selectedYear == null) {
+            return; // 선택 값이 없으면 필터링하지 않음
+        }
+    
+        tableModel.setRowCount(0);
+        for (Grade grade : grades) {
+            boolean matchesYear = selectedYear.equals("전체") || grade.getYear().equals(selectedYear);
+            boolean matchesLecture = selectedLecture.equals("전체") || grade.getLectureName().equals(selectedLecture);
+    
+            if (matchesYear && matchesLecture) {
+                tableModel.addRow(new Object[]{
+                    grade.getId(),
+                    grade.getLectureName(),
+                    grade.getYear(),
+                    grade.getStudentName(),
+                    grade.getMidterm(),
+                    grade.getFinalExam(),
+                    grade.getAssignment(),
+                    grade.getTotal(),
+                    grade.getAverage()
+                });
+            }
+        }
+    }
+
+    // 성적 테이블 갱신
+    public void loadGradesToTable() {
+        tableModel.setRowCount(0);
+        for (Grade grade : grades) {
+            tableModel.addRow(new Object[]{
+                grade.getId(),
+                grade.getLectureName(),
+                grade.getYear(),
+                grade.getStudentName(),
+                grade.getMidterm(),
+                grade.getFinalExam(),
+                grade.getAssignment(),
+                grade.getTotal(),
+                grade.getAverage()
+            });
+        }
+    }
+}
+
+
 
 
 
