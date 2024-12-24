@@ -225,9 +225,9 @@ private void loadFromFile() {
         }
 
         // 디버그 메시지 추가
-        System.out.println("강의 로드 완료: " + lectures.size() + "개");
-        System.out.println("학생 로드 완료: " + students.size() + "개");
-        System.out.println("성적 로드 완료: " + grades.size() + "개");
+        //System.out.println("강의 로드 완료: " + lectures.size() + "개");
+        //System.out.println("학생 로드 완료: " + students.size() + "개");
+        //System.out.println("성적 로드 완료: " + grades.size() + "개");
 
         lecturePanel.loadLecturesToTable();
         studentPanel.loadStudentsToTable();
@@ -405,14 +405,14 @@ class GradePanel extends JPanel {
             lectureComboBox.setSelectedIndex(0);
             updateStudentComboBox();
         } else {
-            System.out.println("강의 목록이 비어 있습니다.");
+            //System.out.println("강의 목록이 비어 있습니다.");
         }
     }
 
     private void updateStudentComboBox() {
         studentComboBox.removeAllItems();
         String selectedLecture = (String) lectureComboBox.getSelectedItem();
-        System.out.println("선택된 강의: " + selectedLecture);
+        //System.out.println("선택된 강의: " + selectedLecture);
 
         if (selectedLecture != null) {
             for (Student student : students) {
@@ -423,7 +423,7 @@ class GradePanel extends JPanel {
         }
 
         if (studentComboBox.getItemCount() == 0) {
-            System.out.println("선택된 강의에 등록된 학생이 없습니다.");
+            //System.out.println("선택된 강의에 등록된 학생이 없습니다.");
         }
     }
 
