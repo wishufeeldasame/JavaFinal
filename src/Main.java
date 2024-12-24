@@ -1,85 +1,19 @@
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.*;
 import java.io.*;
 import java.util.*;
 
-class Lecture {
-    private int id;
-    private String year;
-    private String name;
-    private String time;
-
-    public Lecture(int id, String year, String name, String time) {
-        this.id = id;
-        this.year = year;
-        this.name = name;
-        this.time = time;
-    }
-
-    public int getId() { return id; }
-    public String getYear() { return year; }
-    public String getName() { return name; }
-    public String getTime() { return time; }
-}
-class Student {
-    private int id;
-    private String lectureName;
-    private String year;
-    private String name;
-    private String studentId;
-
-    public Student(int id, String lectureName, String year, String name, String studentId) {
-        this.id = id;
-        this.lectureName = lectureName;
-        this.year = year;
-        this.name = name;
-        this.studentId = studentId;
-    }
-
-    public int getId() { return id; }
-    public String getLectureName() { return lectureName; }
-    public String getYear() { return year; }
-    public String getName() { return name; }
-    public String getStudentId() { return studentId; }
-}
-class Grade {
-    private int id;
-    private String lectureName;
-    private String year;
-    private String studentName;
-    private int midterm, finalExam, assignment, total;
-    private double average;
-
-    public Grade(int id, String lectureName, String year, String studentName, int midterm, int finalExam, int assignment) {
-        this.id = id;
-        this.lectureName = lectureName;
-        this.year = year;
-        this.studentName = studentName;
-        this.midterm = midterm;
-        this.finalExam = finalExam;
-        this.assignment = assignment;
-        this.total = midterm + finalExam + assignment;
-        this.average = Math.round((total / 3.0) * 100) / 100.0;
-    }
-
-    public int getId() { return id; }
-    public String getLectureName() { return lectureName; }
-    public String getYear() { return year; }
-    public String getStudentName() { return studentName; }
-    public int getMidterm() { return midterm; }
-    public int getFinalExam() { return finalExam; }
-    public int getAssignment() { return assignment; }
-    public int getTotal() { return total; }
-    public double getAverage() { return average; }
-
-    public void setMidterm(int midterm) {this.midterm = midterm;}
-    public void setFinalExam(int finalExam) {this.finalExam = finalExam;}
-    public void setAssignment(int assignment) {this.assignment = assignment;}
-    public void setTotal(int total) {this.total = total;}
-    public void setAverage(double average) {this.average = average;}
-}
+/*
+ * 성적 관리 프로그램의 주요 클래스입니다.
+ *
+ * @author 서장호
+ * @version 1.0 2024.12.24
+ * 
+ * @created 2024.11.28
+ * @updated 2024.12.24
+ * 
+ */
 class ManagementApp extends JFrame {
     private java.util.List<Lecture> lectures = new ArrayList<>();
     private java.util.List<Student> students = new ArrayList<>();
@@ -254,6 +188,82 @@ private void loadFromFile() {
     public StudentPanel getStudentPanel() {return studentPanel;}
     public GradePanel getGradePanel() {return gradePanel;}
     public GradeQueryPanel getGradeQueryPanel() {return gradeQueryPanel;}
+}
+
+class Lecture {
+    private int id;
+    private String year;
+    private String name;
+    private String time;
+
+    public Lecture(int id, String year, String name, String time) {
+        this.id = id;
+        this.year = year;
+        this.name = name;
+        this.time = time;
+    }
+
+    public int getId() { return id; }
+    public String getYear() { return year; }
+    public String getName() { return name; }
+    public String getTime() { return time; }
+}
+class Student {
+    private int id;
+    private String lectureName;
+    private String year;
+    private String name;
+    private String studentId;
+
+    public Student(int id, String lectureName, String year, String name, String studentId) {
+        this.id = id;
+        this.lectureName = lectureName;
+        this.year = year;
+        this.name = name;
+        this.studentId = studentId;
+    }
+
+    public int getId() { return id; }
+    public String getLectureName() { return lectureName; }
+    public String getYear() { return year; }
+    public String getName() { return name; }
+    public String getStudentId() { return studentId; }
+}
+class Grade {
+    private int id;
+    private String lectureName;
+    private String year;
+    private String studentName;
+    private int midterm, finalExam, assignment, total;
+    private double average;
+
+    public Grade(int id, String lectureName, String year, String studentName, int midterm, int finalExam, int assignment) {
+        this.id = id;
+        this.lectureName = lectureName;
+        this.year = year;
+        this.studentName = studentName;
+        this.midterm = midterm;
+        this.finalExam = finalExam;
+        this.assignment = assignment;
+        this.total = midterm + finalExam + assignment;
+        this.average = Math.round((total / 3.0) * 100) / 100.0;
+    }
+
+    public int getId() { return id; }
+    public String getLectureName() { return lectureName; }
+    public String getYear() { return year; }
+    public String getStudentName() { return studentName; }
+    public int getMidterm() { return midterm; }
+    public int getFinalExam() { return finalExam; }
+    public int getAssignment() { return assignment; }
+    public int getTotal() { return total; }
+    public double getAverage() { return average; }
+
+    public void setMidterm(int midterm) {this.midterm = midterm;}
+    public void setFinalExam(int finalExam) {this.finalExam = finalExam;}
+    public void setAssignment(int assignment) {this.assignment = assignment;}
+    public void setTotal(int total) {this.total = total;}
+    public void setAverage(double average) {this.average = average;}
 }
 
 class LecturePanel extends JPanel {
@@ -752,10 +762,6 @@ class GradePanel extends JPanel {
     
 }
 
-
-
-
-
 class GradeQueryPanel extends JPanel {
     private java.util.List<Grade> grades; // 성적 리스트
     private java.util.List<Lecture> lectures; // 강의 리스트
@@ -899,9 +905,6 @@ class GradeQueryPanel extends JPanel {
         }
     }
 }
-
-
-
 
 
 public class Main {
