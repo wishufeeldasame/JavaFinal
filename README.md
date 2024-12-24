@@ -1,18 +1,58 @@
-## Getting Started
+# 성적 관리 프로그램
 
-Welcome to the VS Code Java world. Here is a guideline to help you get started to write Java code in Visual Studio Code.
+## 1. 개요
 
-## Folder Structure
+### 1.1 목적
+본 프로그램은 강의와 학생 정보를 효율적으로 관리할 수 있는 통합적인 시스템을 제공합니다.
+성적 등록과 조회를 편하게 할 수 있습니다.
 
-The workspace contains two folders by default, where:
+### 1.2 대상
+학생과 강의를 관리해야 하는 사람들.
+성적을 체계적으로 관리하고 싶은 사람들.
 
-- `src`: the folder to maintain sources
-- `lib`: the folder to maintain dependencies
+---
 
-Meanwhile, the compiled output files will be generated in the `bin` folder by default.
+## 2. 프로그램의 중요성 및 필요성
 
-> If you want to customize the folder structure, open `.vscode/settings.json` and update the related settings there.
+### 2.1 중요성
+- 학사 운영의 효율성을 높이고 데이터 관리의 정확성을 보장합니다.
 
-## Dependency Management
+### 2.2 필요성
+- 반복 작업을 줄이고 시간을 절약할 수 있습니다.
+- 데이터의 일관성과 접근성을 높이고 시간과 비용을 절약할 수 있도록 지원합니다.
 
-The `JAVA PROJECTS` view allows you to manage your dependencies. More details can be found [here](https://github.com/microsoft/vscode-java-dependency#manage-dependencies).
+---
+
+## 3. 프로그램 수행 절차
+
+### 3.1 다이어그램
+프로그램의 전체 동작 흐름은 다음과 같습니다:
+
+1. **강의 관리**  
+   강의 데이터를 추가, 삭제 및 수정하며, 기준년도별로 필터링할 수 있습니다.
+
+2. **학생 관리**  
+   강의와 연계된 학생 데이터를 추가, 삭제 및 수정할 수 있습니다.
+
+3. **성적 등록**  
+   학생별 성적(중간고사, 기말고사, 과제 점수)을 입력 및 수정하고, 평균과 총점을 계산합니다.
+
+4. **성적 조회**  
+   강의별, 기준년도별로 성적 데이터를 조회하고 분석할 수 있습니다.
+
+
+### 3.2 클래스 다이어그램
+
+
+### 3.3 절차 설명
+- **강의 관리**: 강의 데이터를 추가하거나 삭제하며, 기준년도별로 필터링할 수 있습니다.
+- **학생 관리**: 강의와 연동된 학생 데이터를 등록하거나 삭제하며, 학생의 학번과 이름 등을 관리합니다.
+- **성적 등록**: 학생별 중간고사, 기말고사, 과제 점수를 입력하며, 성적을 수정하거나 삭제할 수 있습니다.
+- **성적 조회**: 강의별, 기준년도별로 성적 데이터를 조회하고, 총점 및 평균을 확인할 수 있습니다.
+
+---
+
+## 4. 느낌점
+- 객체 지향 설계를 통한 데이터 일관성과 효율성을 유지하는 방법을 체감하였습니다.
+- 사용자 친화적인 UI 설계가 프로그램 사용 경험에 미치는 영향을 이해하게 되었습니다.
+- 데이터 간의 관계를 체계적으로 유지하는 설계의 중요성을 배우는 계기가 되었습니다.
