@@ -25,6 +25,10 @@ class ManagementApp extends JFrame {
     private GradePanel gradePanel;
     private GradeQueryPanel gradeQueryPanel;
 
+    /*
+     * 성적 관리 프로그램의 생성자입니다.
+     * 프로그램의 기초 GUI를 구성하고고, 초기 데이터를 로드합니다.
+     */
     public ManagementApp() {
         setTitle("성적 관리 프로그램");
         setSize(800, 600);
@@ -49,6 +53,7 @@ class ManagementApp extends JFrame {
         add(tabbedPane, BorderLayout.CENTER);
 
         // 초기 데이터 로드
+        // @throws IOException 파일 로드 중 오류가 발생한 경우
         try {
             loadData();
             gradePanel.updateLectureComboBox();
@@ -60,6 +65,11 @@ class ManagementApp extends JFrame {
         setVisible(true);
     }
 
+    /*
+     * 메뉴바를 생성하고 프레임에 추가합니다.
+     * 파일 메뉴와 도움말 메뉴를 구성합니다.
+     * 파일 메뉴에는 저장, 불러오기, 종료, 도움말 메뉴에는 About 메뉴를 추가합니다.
+     */
     private void createMenuBar() {
         JMenuBar menuBar = new JMenuBar();
 
@@ -92,6 +102,9 @@ class ManagementApp extends JFrame {
         setJMenuBar(menuBar);
     }
 
+    /*
+     * About 다이얼로그를 표시합니다.
+     */
     private void showAboutDialog() {
         JOptionPane.showMessageDialog(this,
                 "성적 관리 프로그램 \n" +
@@ -102,21 +115,29 @@ class ManagementApp extends JFrame {
                 JOptionPane.INFORMATION_MESSAGE);
     }
 
+    /*
+     * 데이터를 저장하는 메소드입니다. 
+     * data.txt 파일에
+     * #LECTURES, #STUDENTS, #GRADES 섹션으로 데이터를 저장합니다.
+     * 
+     * @throws IOException 파일 저장 중 오류가 발생한 경우
+     * 
+     */
     private void saveToFile() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME))) {
-            // Save lectures
+            // 강의 저장
             writer.write("#LECTURES\n");
             for (Lecture lecture : lectures) {
                 writer.write(lecture.getId() + "|" + lecture.getYear() + "|" + lecture.getName() + "|" + lecture.getTime() + "\n");
             }
 
-            // Save students
+            // 학생 저장
             writer.write("#STUDENTS\n");
             for (Student student : students) {
                 writer.write(student.getId() + "|" + student.getLectureName() + "|" + student.getYear() + "|" + student.getName() + "|" + student.getStudentId() + "\n");
             }
 
-            // Save grades
+            // 성적 저장장
             writer.write("#GRADES\n");
             for (Grade grade : grades) {
                 writer.write(grade.getId() + "|" + grade.getLectureName() + "|" + grade.getYear() + "|" + grade.getStudentName() +
@@ -130,50 +151,61 @@ class ManagementApp extends JFrame {
         }
     }
 
-private void loadFromFile() {
-    try (BufferedReader reader = new BufferedReader(new FileReader(FILE_NAME))) {
-        lectures.clear();
-        students.clear();
-        grades.clear();
 
-        String line;
-        String currentSection = "";
-        while ((line = reader.readLine()) != null) {
-            if (line.startsWith("#")) {
-                currentSection = line;
-            } else {
-                String[] parts = line.split("\\|");
-                switch (currentSection) {
-                    case "#LECTURES":
-                        lectures.add(new Lecture(Integer.parseInt(parts[0]), parts[1], parts[2], parts[3]));
-                        break;
-                    case "#STUDENTS":
-                        students.add(new Student(Integer.parseInt(parts[0]), parts[1], parts[2], parts[3], parts[4]));
-                        break;
-                    case "#GRADES":
-                        grades.add(new Grade(Integer.parseInt(parts[0]), parts[1], parts[2], parts[3],
-                                             Integer.parseInt(parts[4]), Integer.parseInt(parts[5]),
-                                             Integer.parseInt(parts[6])));
-                        break;
+    /*
+     * 데이터를 불러오는 메소드입니다.
+     * data.txt 파일에서 데이터를 읽어와서
+     * 강의, 학생, 성적 리스트에 저장합니다.
+     * 
+     * @throws IOException 파일 로드 중 오류가 발생한 경우
+     */
+    private void loadFromFile() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_NAME))) {
+            lectures.clear();
+            students.clear();
+            grades.clear();
+
+            String line;
+            String currentSection = "";
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("#")) {
+                    currentSection = line;
+                } else {
+                    String[] parts = line.split("\\|");
+                    switch (currentSection) {
+                        case "#LECTURES":
+                            lectures.add(new Lecture(Integer.parseInt(parts[0]), parts[1], parts[2], parts[3]));
+                            break;
+                        case "#STUDENTS":
+                            students.add(new Student(Integer.parseInt(parts[0]), parts[1], parts[2], parts[3], parts[4]));
+                            break;
+                        case "#GRADES":
+                            grades.add(new Grade(Integer.parseInt(parts[0]), parts[1], parts[2], parts[3],
+                                                 Integer.parseInt(parts[4]), Integer.parseInt(parts[5]),
+                                                 Integer.parseInt(parts[6])));
+                            break;
+                    }
                 }
             }
+
+            // 디버그 메시지 추가
+            //System.out.println("강의 로드 완료: " + lectures.size() + "개");
+            //System.out.println("학생 로드 완료: " + students.size() + "개");
+            //System.out.println("성적 로드 완료: " + grades.size() + "개");
+
+            lecturePanel.loadLecturesToTable();
+            studentPanel.loadStudentsToTable();
+
+            JOptionPane.showMessageDialog(this, "파일 로드가 완료되었습니다.", "성공", JOptionPane.INFORMATION_MESSAGE);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "파일 로드 중 오류 발생: " + e.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
         }
-
-        // 디버그 메시지 추가
-        //System.out.println("강의 로드 완료: " + lectures.size() + "개");
-        //System.out.println("학생 로드 완료: " + students.size() + "개");
-        //System.out.println("성적 로드 완료: " + grades.size() + "개");
-
-        lecturePanel.loadLecturesToTable();
-        studentPanel.loadStudentsToTable();
-
-        JOptionPane.showMessageDialog(this, "파일 로드가 완료되었습니다.", "성공", JOptionPane.INFORMATION_MESSAGE);
-    } catch (IOException e) {
-        JOptionPane.showMessageDialog(this, "파일 로드 중 오류 발생: " + e.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
     }
-}
 
-
+    /*
+     * loadFromFile() 메소드를 호출하여 데이터를 불러옵니다.
+     * 
+     */
     private void loadData() throws IOException {
         File file = new File(FILE_NAME);
         if (file.exists()) {
@@ -181,6 +213,7 @@ private void loadFromFile() {
         }
     }
 
+    // Getter 메소드입니다.
     public java.util.List<Lecture> getLectures() {return lectures;}
     public java.util.List<Student> getStudents() {return students;}
     public java.util.List<Grade> getGrades() {return grades;}
@@ -190,6 +223,11 @@ private void loadFromFile() {
     public GradeQueryPanel getGradeQueryPanel() {return gradeQueryPanel;}
 }
 
+
+
+/*
+ * 강의 목록 클래스입니다.
+ */
 class Lecture {
     private int id;
     private String year;
@@ -208,6 +246,10 @@ class Lecture {
     public String getName() { return name; }
     public String getTime() { return time; }
 }
+
+/*
+ * 학생 목록 클래스입니다.
+ */
 class Student {
     private int id;
     private String lectureName;
@@ -229,6 +271,10 @@ class Student {
     public String getName() { return name; }
     public String getStudentId() { return studentId; }
 }
+
+/*
+ * 성적 클래스입니다.
+ */
 class Grade {
     private int id;
     private String lectureName;
@@ -266,12 +312,22 @@ class Grade {
     public void setAverage(double average) {this.average = average;}
 }
 
+/*
+ * 강의 관리 패널 클래스입니다.
+ * 강의 목록을 표시하고 강의를 추가하거나 삭제할 수 있습니다.
+ * 
+ */
 class LecturePanel extends JPanel {
     private JTable lectureTable;
     private DefaultTableModel tableModel;
     private java.util.List<Lecture> lectures;
     private ManagementApp app;
 
+    /*
+     * 강의 관리 패널의 생성자입니다.
+     * 강의 목록과 메인 애플리케이션을 전달받습니다.
+     * 
+     */
     public LecturePanel(java.util.List<Lecture> lectures, ManagementApp app) {
         this.lectures = lectures;
         this.app = app;
@@ -299,6 +355,10 @@ class LecturePanel extends JPanel {
         deleteButton.addActionListener(e -> deleteLecture());
     }
 
+    /*
+     * 강의를 추가하는 메소드입니다.
+     * 강의명, 기준년도, 시간을 입력받아 강의를 추가합니다.
+     */
     private void addLecture() {
         // JDialog 생성
         JDialog dialog = new JDialog((Frame) null, "강의 추가", true);
@@ -376,7 +436,10 @@ class LecturePanel extends JPanel {
         dialog.setVisible(true);
     }
     
-
+    /*
+     * 강의를 삭제하는 메소드입니다.
+     * 테이블에서 선택된 강의를 삭제합니다.
+     */
     private void deleteLecture() {
         int selectedRow = lectureTable.getSelectedRow();
         if (selectedRow == -1) {
@@ -396,6 +459,11 @@ class LecturePanel extends JPanel {
         JOptionPane.showMessageDialog(this, "강의와 관련된 모든 데이터가 삭제되었습니다.", "성공", JOptionPane.INFORMATION_MESSAGE);
     }
 
+    /*
+     * 테이블에 강의 목록을 로드하는 메소드입니다.
+     * 강의 목록을 테이블에 추가합니다.
+     * 
+     */
     public void loadLecturesToTable() {
         tableModel.setRowCount(0);
         for (Lecture lecture : lectures) {
@@ -409,12 +477,20 @@ class LecturePanel extends JPanel {
     }
 }
 
+/*
+ * 학생 관리 패널 클래스입니다.
+ * 학생 목록을 표시하고 학생을 추가하거나 삭제할 수 있습니다.
+ */
 class StudentPanel extends JPanel {
     private JTable studentTable;
     private DefaultTableModel tableModel;
     private java.util.List<Student> students;
     private ManagementApp app;
 
+    /*
+     * 학생 관리 패널의 생성자입니다.
+     * 학생 목록과 메인 애플리케이션을 전달받습니다.
+     */
     public StudentPanel(java.util.List<Student> students, ManagementApp app) {
         this.students = students;
         this.app = app;
@@ -442,6 +518,10 @@ class StudentPanel extends JPanel {
         deleteButton.addActionListener(e -> deleteStudent());
     }
 
+    /*
+     * 학생을 추가하는 메소드입니다.
+     * 강의명, 기준년도, 이름, 학번을 입력받아 학생을 추가합니다.
+     */
     private void addStudent() {
         // JDialog 생성
         JDialog dialog = new JDialog((Frame) null, "학생 추가", true);
@@ -536,8 +616,10 @@ class StudentPanel extends JPanel {
         dialog.setVisible(true);
     }
     
-    
-
+    /*
+     * 학생을 삭제하는 메소드입니다.
+     * 테이블에서 선택된 학생을 삭제합니다.
+     */
     private void deleteStudent() {
         int selectedRow = studentTable.getSelectedRow();
         if (selectedRow == -1) {
@@ -556,6 +638,10 @@ class StudentPanel extends JPanel {
         JOptionPane.showMessageDialog(this, "학생과 관련된 성적 데이터가 삭제되었습니다.", "성공", JOptionPane.INFORMATION_MESSAGE);
     }
 
+    /*
+     * 테이블에 학생 목록을 로드하는 메소드입니다.
+     * 학생 목록을 테이블에 추가합니다.
+     */
     public void loadStudentsToTable() {
         tableModel.setRowCount(0);
         for (Student student : students) {
@@ -570,7 +656,10 @@ class StudentPanel extends JPanel {
     }
 }
 
-
+/*
+ * 성적 관리 패널 클래스입니다.
+ * 성적 목록을 표시하고 성적을 추가할 수 있습니다.
+ */
 class GradePanel extends JPanel {
     private java.util.List<Grade> grades;
     private java.util.List<Student> students;
@@ -582,6 +671,10 @@ class GradePanel extends JPanel {
     private JComboBox<String> studentComboBox;
     private JTextField midtermField, finalExamField, assignmentField;
 
+    /*
+     * 성적 관리 패널의 생성자입니다.
+     * 성적 목록, 학생 목록, 강의 목록을 전달받습니다.
+     */
     public GradePanel(java.util.List<Grade> grades, java.util.List<Student> students, java.util.List<Lecture> lectures) {
         this.grades = grades;
         this.students = students;
@@ -638,6 +731,10 @@ class GradePanel extends JPanel {
         updateLectureComboBox();
     }
 
+    /*
+     * 강의 콤보박스를 업데이트하는 메소드입니다.
+     * 강의 목록을 콤보박스에 추가합니다.
+     */
     void updateLectureComboBox() {
         lectureComboBox.removeAllItems();
         for (Lecture lecture : lectures) {
@@ -652,6 +749,10 @@ class GradePanel extends JPanel {
         }
     }
 
+    /*
+     * 학생 콤보박스를 업데이트하는 메소드입니다.
+     * 선택된 강의에 등록된 학생을 콤보박스에 추가합니다.
+     */
     public void updateStudentComboBox() {
         studentComboBox.removeAllItems();
         String selectedLecture = (String) lectureComboBox.getSelectedItem();
@@ -670,6 +771,10 @@ class GradePanel extends JPanel {
         }
     }
 
+    /*
+     * 성적을 테이블에 로드하는 메소드입니다.
+     * 성적 목록을 테이블에 추가합니다.
+     */
     public void loadGradesToTable() {
         tableModel.setRowCount(0);
         for (Grade grade : grades) {
@@ -687,6 +792,10 @@ class GradePanel extends JPanel {
         }
     }
 
+    /*
+     * 성적을 추가하는 메소드입니다.
+     * 입력된 성적을 성적 목록에 추가합니다.
+     */
     private void addGrade() {
         String selectedLecture = (String) lectureComboBox.getSelectedItem();
         String selectedStudent = (String) studentComboBox.getSelectedItem();
@@ -762,6 +871,10 @@ class GradePanel extends JPanel {
     
 }
 
+/*
+ * 성적 조회 패널 클래스입니다.
+ * 성적 목록을 필터링하여 표시할 수 있습니다.
+ */
 class GradeQueryPanel extends JPanel {
     private java.util.List<Grade> grades; // 성적 리스트
     private java.util.List<Lecture> lectures; // 강의 리스트
@@ -771,6 +884,10 @@ class GradeQueryPanel extends JPanel {
     private JComboBox<String> yearComboBox; // 기준년도 필터
     private JComboBox<String> lectureComboBox; // 강의명 필터
 
+    /*
+     * 성적 조회 패널의 생성자입니다.
+     * 성적 목록과 강의 목록을 전달받습니다.
+     */
     public GradeQueryPanel(java.util.List<Grade> grades, java.util.List<Lecture> lectures) {
         this.grades = grades;
         this.lectures = lectures;
@@ -805,7 +922,10 @@ class GradeQueryPanel extends JPanel {
         updateYearComboBox();
     }
 
-    // 기준년도 필터 업데이트
+    /*
+     * 기준년도 콤보박스 업데이트
+     * 기준년도 목록을 콤보박스에 추가합니다.
+     */
     void updateYearComboBox() {
         yearComboBox.removeAllItems();
         yearComboBox.addItem("전체"); // 기본값
@@ -821,7 +941,9 @@ class GradeQueryPanel extends JPanel {
         }
     }
 
-    // yearComboBoxContains 메서드 구현
+    /*
+     * yearComboBox에 year가 포함되어 있는지 확인하는 메소드입니다.
+     */
     private boolean yearComboBoxContains(String year) {
         for (int i = 0; i < yearComboBox.getItemCount(); i++) {
             if (yearComboBox.getItemAt(i).equals(year)) {
@@ -832,7 +954,10 @@ class GradeQueryPanel extends JPanel {
     }
 
 
-    // 강의명 필터 업데이트
+    /*
+     * 강의명 콤보박스 업데이트
+     * 선택된 기준년도에 해당하는 강의명을 콤보박스에 추가합니다.
+     */
     void updateLectureComboBox() {
         lectureComboBox.removeAllItems();
         lectureComboBox.addItem("전체"); // 기본값 추가
@@ -856,7 +981,10 @@ class GradeQueryPanel extends JPanel {
     filterGrades(); // 강의 필터 업데이트 후 성적 필터링 실행
 }
 
-    // 성적 데이터 필터링
+    /*
+     * 성적 필터링 메소드입니다.
+     * 기준년도와 강의명에 따라 성적을 필터링합니다.
+     */
     private void filterGrades() {
         String selectedYear = (String) yearComboBox.getSelectedItem();
         String selectedLecture = (String) lectureComboBox.getSelectedItem();
@@ -887,7 +1015,10 @@ class GradeQueryPanel extends JPanel {
         }
     }
 
-    // 성적 테이블 갱신
+    /*
+     * 테이블에 성적 목록을 로드하는 메소드입니다.
+     * 성적 목록을 테이블에 추가합니다. 
+     */
     public void loadGradesToTable() {
         tableModel.setRowCount(0);
         for (Grade grade : grades) {
